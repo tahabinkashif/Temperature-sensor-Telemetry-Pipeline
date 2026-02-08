@@ -146,5 +146,6 @@ Node-RED connects to the same MQTT broker and:
 
 ## Documentation
 
-- 📄 [Telemetry Protocol](docs/protocol.md)
-- 🔌 [Hardware Wiring](docs/wiring.md)
+- 📄 [Telemetry Protocol](docs/PROTOCOL.md)
+- 🔌 [Hardware Wiring](docs/WIRING.md)
+

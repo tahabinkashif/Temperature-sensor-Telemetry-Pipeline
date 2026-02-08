@@ -6,7 +6,7 @@ A complete **edge → gateway → dashboard** telemetry system:
 - **ESP32 (Gateway)** receives the binary frames over **UART + DMA**, validates and parses them, then publishes decoded values to **MQTT**.
 - **Node-RED (Dashboard)** subscribes to MQTT and renders live temperature metrics (charts + numeric indicators).
 
-<img src="docs/images/Diagram1.png" alt="Dashboard" width="700">
+<img src="docs/images/Diagram1.png" alt="Dashboard" width="900">
 ---
 
 ## Repository Structure
@@ -150,6 +150,7 @@ Node-RED connects to the same MQTT broker and:
 
 - 📄 [Telemetry Protocol](docs/PROTOCOL.md)
 - 🔌 [Hardware Wiring](docs/WIRING.md)
+
 
 
 

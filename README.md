@@ -8,28 +8,29 @@ A complete **edge → gateway → dashboard** telemetry system:
 
 ---
 
-##Repository Structure
+## Repository Structure
 
+```text
 temperature-telemetry-pipeline/
 ├── README.md
 ├── docs/
 │   ├── protocol.md        # Frame layout, CRC, examples
-│   ├── wiring.md          # Pin mappings (STM32↔ESP32↔LM35)
+│   ├── wiring.md          # Pin mappings (STM32 ↔ ESP32 ↔ LM35)
 │   └── images/
 ├── stm32-bluepill-fw/     # STM32CubeIDE project
-└── esp32-mqtt-gateway/    # ESP-IDF project
+├── esp32-fw/              # ESP-IDF firmware
 └── nodered/               # Node-RED flow export
-
+```
 
 ## End-to-End Data Flow (What Actually Happens)
 
-### 1) ADC sampling using TIM3 trigger + ADC DMA
+## 1) ADC sampling using TIM3 trigger + ADC DMA
 - **TIM3** generates periodic triggers (`TRGO_UPDATE`).
 - **ADC1** runs one conversion per trigger (`ADC_CHANNEL_0`).
 - **DMA1_Channel1** writes ADC samples into `adc_buf[]`:
 
 
-##Ping-pong buffering using half/full DMA callbacks
+## 2) Ping-pong buffering using half/full DMA callbacks
 
 The 200-sample DMA buffer is treated as two halves:
 
@@ -46,14 +47,14 @@ This is effectively a ping-pong scheme:
 - No samples are missed, and CPU work is spread out.
 
 
-##Averaging each half-buffer (noise reduction)
+## 3) Averaging each half-buffer (noise reduction)
 
 In the main loop, when either flag is set:
 - CPU computes the average of that half-buffer.
 
 This turns 100 raw ADC samples into one averaged sample per half-buffer update.
 
-##IIR filtering on the averaged sample (smoothing)
+## 4) IIR filtering on the averaged sample (smoothing)
 
 After averaging, you run an IIR low-pass:
 
@@ -62,7 +63,7 @@ After averaging, you run an IIR low-pass:
 That means each new update nudges the filtered value ~12.5% toward the new average.
 
 
-##Convert filtered ADC counts to temperature (LM35, °C × 100)
+## 5) Convert filtered ADC counts to temperature (LM35, °C × 100)
 
 temp_c_x100 is computed from the filtered ADC counts.
 conversion assumes:
@@ -71,7 +72,7 @@ conversion assumes:
 - LM35: 10 mV / °C
 
 
-##Packetize into a binary frame (with seq + timestamp + CRC)
+## 6) Packetize into a binary frame (with seq + timestamp + CRC)
 
 When an update happens, STM32 builds a framed packet:
 - Header (12 bytes)
@@ -89,7 +90,7 @@ When an update happens, STM32 builds a framed packet:
 - CRC-16/CCITT-FALSE over header+payload
 
 
-##7) USART1 transmit using DMA (non-blocking)
+## 7) USART1 transmit using DMA (non-blocking)
 
 Frames are sent via HAL_UART_Transmit_DMA() so the CPU never blocks waiting for UART.
 Ping-pong TX buffers avoid modifying memory while DMA reads.
@@ -105,7 +106,7 @@ When DMA finishes transmitting:
 - Else → mark UART idle
 
 
-##8) ESP32 receives via UART + DMA, parses frames, publishes to MQTT
+## 8) ESP32 receives via UART + DMA, parses frames, publishes to MQTT
 
 On the ESP32 side (ESP-IDF), the intended pipeline is:
 
@@ -119,11 +120,11 @@ If valid:
 - Extract filt_adc, temp_c_x100, flags, seq, timestamp.
 
 
-##MQTT command + telemetry behavior
+## MQTT command + telemetry behavior
 
 ESP32 subscribes to a cmd topic and listens for these commands:
-- TEMP → start publishing temperature telemetry
-- STOP → stop publishing temperature telemetry
+-TEMP → start publishing temperature telemetry
+-STOP → stop publishing temperature telemetry
 
 When the ESP32 receives TEMP, it begins publishing the following telemetry topics:
 
@@ -137,7 +138,7 @@ MQTT publish mapping:
 When the ESP32 receives STOP, it stops publishing the temperature telemetry.
 
 
-##9) Node-RED subscribes and visualizes
+## 9) Node-RED subscribes and visualizes
 
 Node-RED connects to the same MQTT broker and:
 - subscribes to the telemetry topics
